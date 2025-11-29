@@ -30,7 +30,7 @@ echo "--- Installing Detectron2 (Git) ---"
 # Detectron2 is the most fragile dependency; we install it via git to ensure CUDA compatibility
 # We install this BEFORE requirements.txt to prevent conflicts
 $PIP_CMD install torch torchvision
-$PIP_CMD install 'git+https://github.com/facebookresearch/detectron2.git'
+$PIP_CMD install 'git+https://github.com/facebookresearch/detectron2.git' --no-build-isolation
 
 echo "--- Installing Requirements ---"
 if [ -f "requirements.txt" ]; then
