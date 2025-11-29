@@ -43,7 +43,6 @@ fi
 # --- INSTALL ALL PYTHON DEPENDENCIES ---
 
 export HF_HUB_ENABLE_HF_TRANSFER=1
-$PIP_INSTALL
 if [ -f "/workspace/ComfyUI/custom_nodes/FastFit/requirements.txt" ]; then
     sed -i '/easy-dwpose/d' /workspace/ComfyUI/custom_nodes/FastFit/requirements.txt
 fi
