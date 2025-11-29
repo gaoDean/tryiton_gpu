@@ -8,7 +8,7 @@ apt-get install -y wget git build-essential libgl1-mesa-glx libglib2.0-0 python3
 
 # --- 2. WORKSPACE SETUP & CLONING ---
 cd /workspace
-git clone git@github.com:gaoDean/tryiton_gpu.git
+git clone https://github.com/gaoDean/tryiton_gpu.git 
 cd tryiton_gpu
 
 # define paths for easy invocation
