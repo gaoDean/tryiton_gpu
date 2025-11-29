@@ -42,7 +42,7 @@ fi
 
 # --- INSTALL ALL PYTHON DEPENDENCIES ---
 
-$PIP_INSTALL easy-dwpose --no-dependencies
+$PIP_INSTALL easy-dwpose --no-deps
 $PIP_INSTALL \
     -r /workspace/tryiton_gpu/requirements.txt \
     -r /workspace/ComfyUI/requirements.txt \
