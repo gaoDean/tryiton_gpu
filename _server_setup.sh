@@ -49,7 +49,7 @@ $PIP_INSTALL \
     -r /workspace/ComfyUI/custom_nodes/FastFit/requirements.txt \
     -r /workspace/ComfyUI/custom_nodes/ComfyUI-Safety-Checker/requirements.txt \
     -r /workspace/ComfyUI/custom_nodes/ComfyUI_essentials/requirements.txt \
-    huggingface_hub hf_transfer av
+    huggingface_hub hf-transfer av
 
 export HF_HUB_ENABLE_HF_TRANSFER=1
 
