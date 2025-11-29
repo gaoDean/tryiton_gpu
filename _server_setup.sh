@@ -3,7 +3,7 @@
 # --- SYSTEM & BUILD TOOLS ---
 
 apt-get update
-apt-get install -y wget git build-essential supervisor libavdevice-dev libavfilter-dev libopus-dev libvpx-dev pkg-config libgl1-mesa-glx libglib2.0-0
+apt-get install -y wget git build-essential supervisor libavdevice-dev libavfilter-dev libopus-dev libvpx-dev pkg-config libgl1-mesa-glx libglib2.0-0 unzip
 
 # Install uv for faster pip installs
 /venv/main/bin/pip install uv
@@ -15,7 +15,7 @@ cd /workspace
 
 if [ ! -d "tryiton_gpu" ]; then
     git clone https://github.com/gaoDean/tryiton_gpu.git
-    mv /workspace/stablehair_server/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+    mv /workspace/tryiton_gpu/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 fi
 
 if [ ! -d "ComfyUI" ]; then
