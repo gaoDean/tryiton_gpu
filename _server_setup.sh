@@ -32,7 +32,7 @@ fi
 if [ ! -d "FastFit" ]; then
     echo "Downloading FastFit Release..."
     wget -O FastFit.zip https://github.com/Zheng-Chong/FastFit/releases/download/comfyui/FastFit.zip
-    unzip FastFit.zip
+    unzip -q FastFit.zip
     rm FastFit.zip
 fi
 
