@@ -8,11 +8,14 @@ apt-get install -y wget git build-essential libgl1-mesa-glx libglib2.0-0 python3
 
 # --- 2. WORKSPACE SETUP & CLONING ---
 cd /workspace
+git clone git@github.com:gaoDean/tryiton_gpu.git
+cd tryiton_gpu
 
 # define paths for easy invocation
 /venv/main/bin/pip install uv
 PIP_CMD="/venv/main/bin/uv pip install --python /venv/main/bin/python"
 PYTHON_CMD="/venv/main/bin/python"
+
 
 # --- 3. INSTALL DEPENDENCIES ---
 
@@ -44,8 +47,6 @@ fi
 
 # Create directory for inputs if it doesn't exist
 mkdir -p inputs
-
-source /workspace/venv/bin/activate
 
 echo "----------------------------------------------------"
 echo "SETUP COMPLETE"
