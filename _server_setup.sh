@@ -43,7 +43,7 @@ fi
 # --- INSTALL ALL PYTHON DEPENDENCIES ---
 
 export HF_HUB_ENABLE_HF_TRANSFER=1
-$PIP_INSTALL hf_transfer huggingface_hub==0.30.0 av
+$PIP_INSTALL
 if [ -f "/workspace/ComfyUI/custom_nodes/FastFit/requirements.txt" ]; then
     sed -i '/easy-dwpose/d' /workspace/ComfyUI/custom_nodes/FastFit/requirements.txt
 fi
@@ -53,7 +53,8 @@ $PIP_INSTALL \
     -r /workspace/ComfyUI/requirements.txt \
     -r /workspace/ComfyUI/custom_nodes/FastFit/requirements.txt \
     -r /workspace/ComfyUI/custom_nodes/ComfyUI-Safety-Checker/requirements.txt \
-    -r /workspace/ComfyUI/custom_nodes/ComfyUI_essentials/requirements.txt
+    -r /workspace/ComfyUI/custom_nodes/ComfyUI_essentials/requirements.txt \
+    hf_transfer huggingface_hub==0.30.0 av
 
 $PIP_INSTALL easy-dwpose --no-deps
 
@@ -87,7 +88,8 @@ fi
 service supervisor start
 supervisorctl reread
 supervisorctl update
-supervisorctl start api_server ngrok comfyui
+# supervisorctl start api_server ngrok comfyui
+supervisorctl start ngrok comfyui
 
 echo "Deployment Complete"
 echo "Server is accessible at: https://unintrigued-epigamic-rowan.ngrok-free.dev"
