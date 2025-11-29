@@ -42,16 +42,21 @@ fi
 
 # --- INSTALL ALL PYTHON DEPENDENCIES ---
 
-$PIP_INSTALL easy-dwpose --no-deps
+export HF_HUB_ENABLE_HF_TRANSFER=1
+$PIP_INSTALL hf_transfer huggingface_hub==0.30.0 av
+if [ -f "/workspace/ComfyUI/custom_nodes/FastFit/requirements.txt" ]; then
+    sed -i '/easy-dwpose/d' /workspace/ComfyUI/custom_nodes/FastFit/requirements.txt
+fi
+
 $PIP_INSTALL \
     -r /workspace/tryiton_gpu/requirements.txt \
     -r /workspace/ComfyUI/requirements.txt \
     -r /workspace/ComfyUI/custom_nodes/FastFit/requirements.txt \
     -r /workspace/ComfyUI/custom_nodes/ComfyUI-Safety-Checker/requirements.txt \
-    -r /workspace/ComfyUI/custom_nodes/ComfyUI_essentials/requirements.txt \
-    huggingface_hub hf-transfer av
+    -r /workspace/ComfyUI/custom_nodes/ComfyUI_essentials/requirements.txt
 
-export HF_HUB_ENABLE_HF_TRANSFER=1
+$PIP_INSTALL easy-dwpose --no-deps
+
 
 # --- DOWNLOAD MODELS ---
 
