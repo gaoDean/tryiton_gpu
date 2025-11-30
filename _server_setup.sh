@@ -4,7 +4,7 @@
 echo "--- Updating System and Installing Build Tools ---"
 apt-get update
 # libgl1 and libglib are strictly required for OpenCV
-apt-get install -y wget git build-essential libgl1-mesa-glx libglib2.0-0 python3-venv python3-dev
+apt-get install -y wget git build-essential libgl1 libglib2.0-0
 
 # --- 2. WORKSPACE SETUP & CLONING ---
 cd /workspace
@@ -26,28 +26,10 @@ $PIP_CMD hf-transfer huggingface_hub
 /venv/main/bin/hf download zhengchong/FastFit-MR-1024 --local-dir Models/FastFit-MR-1024
 /venv/main/bin/hf download zhengchong/Human-Toolkit --local-dir Models/Human-Toolkit
 
-echo "--- Installing Detectron2 (Git) ---"
-# Detectron2 is the most fragile dependency; we install it via git to ensure CUDA compatibility
-# We install this BEFORE requirements.txt to prevent conflicts
-$PIP_CMD torch torchvision
-$PIP_CMD 'git+https://github.com/facebookresearch/detectron2.git' --no-build-isolation
 
-echo "--- Installing Requirements ---"
-if [ -f "requirements.txt" ]; then
-    $PIP_CMD -r requirements.txt
-else
-    echo "WARNING: requirements.txt not found"
-fi
+$PIP_CMD -r requirements.txt
+$PIP_CMD huggingface-hub==0.30.0
 
-# --- 4. FINAL CONFIGURATION ---
-
-# Ensure the inference script is executable if present
-if [ -f "inference.py" ]; then
-    chmod +x inference.py
-fi
-
-# Create directory for inputs if it doesn't exist
-mkdir -p inputs
 
 echo "----------------------------------------------------"
 echo "SETUP COMPLETE"
