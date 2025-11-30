@@ -2,8 +2,10 @@ import os
 import sys
 import tempfile
 import shutil
+import random
 from flask import Flask, request, send_file, jsonify
 from inference import FastFitEngine
+from pyngrok import ngrok
 
 app = Flask(__name__)
 
@@ -60,7 +62,11 @@ def prompt():
         # 3. Run Inference
         # We ask engine to return the PIL image directly
         steps = int(request.form.get('steps', 30))
-        seed = int(request.form.get('seed', 42))
+        seed_param = request.form.get('seed')
+        if seed_param is None:
+            seed = random.randint(0, 2**32 - 1) # Randomize seed if not provided
+        else:
+            seed = int(seed_param)
         
         print(f"Processing request in {temp_dir}")
         result_image = engine.process(
@@ -85,4 +91,11 @@ def prompt():
         shutil.rmtree(temp_dir)
 
 if __name__ == '__main__':
+    # Start ngrok tunnel
+    try:
+        public_url = ngrok.connect(5000)
+        print(f" * Ngrok tunnel \"{public_url}\" -> \"http://127.0.0.1:5000\"")
+    except Exception as e:
+        print(f"Could not start ngrok: {e}")
+    
     app.run(host='0.0.0.0', port=5000)

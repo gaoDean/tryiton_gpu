@@ -118,7 +118,7 @@ Run the script from the root of the `FastFit` directory.
 | `--shoe` | String | No | Path to footwear. |
 | `--bag` | String | No | Path to a bag/purse. |
 | `--steps` | Integer | No | Denoising steps. Higher = more detail, slower (Default: 30). |
-| `--seed` | Integer | No | Seed for reproducibility (Default: 42). |
+| `--seed` | Integer | No | Seed for reproducibility. If not provided, a random seed will be used. |
 
 ### Important Logic Guards
 

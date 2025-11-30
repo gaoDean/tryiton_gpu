@@ -4,9 +4,21 @@
 echo "--- Updating System and Installing Build Tools ---"
 apt-get update
 # libgl1 and libglib are strictly required for OpenCV
-apt-get install -y wget git build-essential 
+apt-get install -y wget git build-essential unzip
 
-# --- 2. WORKSPACE SETUP & CLONING ---
+# --- 2. NGROK SETUP ---
+if [ -z "$NGROK_AUTH" ]; then
+    echo "WARNING: NGROK_AUTH environment variable not set. Ngrok may not work."
+else
+    echo "--- Setting up Ngrok ---"
+    wget -q https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.zip
+    unzip -o ngrok-v3-stable-linux-amd64.zip
+    mv ngrok /usr/local/bin/ngrok
+    rm ngrok-v3-stable-linux-amd64.zip
+    ngrok config add-authtoken $NGROK_AUTH
+fi
+
+# --- 3. WORKSPACE SETUP & CLONING ---
 cd /workspace
 git clone https://github.com/gaoDean/tryiton_gpu.git 
 cd tryiton_gpu
@@ -17,7 +29,7 @@ PIP_CMD="/venv/main/bin/uv pip install --python /venv/main/bin/python"
 PYTHON_CMD="/venv/main/bin/python"
 
 
-# --- 3. INSTALL DEPENDENCIES ---
+# --- 4. INSTALL DEPENDENCIES ---
 
 # Enable HF Transfer for faster model downloads later
 export HF_HUB_ENABLE_HF_TRANSFER=1
@@ -29,7 +41,7 @@ $PIP_CMD hf-transfer huggingface_hub
 $PIP_CMD -r requirements.txt
 /venv/main/bin/pip install easy-dwpose --no-dependencies
 
-# --- 4. FINAL CONFIGURATION ---
+# --- 5. FINAL CONFIGURATION ---
 
 # Ensure the inference script is executable if present
 if [ -f "inference.py" ]; then
