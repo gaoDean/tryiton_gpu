@@ -4,7 +4,7 @@
 echo "--- Updating System and Installing Build Tools ---"
 apt-get update
 # libgl1 and libglib are strictly required for OpenCV
-apt-get install -y wget git build-essential unzip
+apt-get install -y wget git build-essential unzip supervisor
 
 # --- 2. NGROK SETUP ---
 if [ -z "$NGROK_AUTH" ]; then
@@ -22,6 +22,7 @@ fi
 cd /workspace
 git clone https://github.com/gaoDean/tryiton_gpu.git 
 cd tryiton_gpu
+mv supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # define paths for easy invocation
 /venv/main/bin/pip install uv
@@ -48,8 +49,11 @@ if [ -f "inference.py" ]; then
     chmod +x inference.py
 fi
 
-# Create directory for inputs if it doesn't exist
-mkdir -p inputs
+echo "--- Starting and configuring Supervisord services ---"
+service supervisor start
+supervisorctl reread
+supervisorctl update
+supervisorctl start ngrok server
 
 echo "----------------------------------------------------"
 echo "SETUP COMPLETE"
