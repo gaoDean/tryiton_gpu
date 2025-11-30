@@ -4,7 +4,7 @@
 echo "--- Updating System and Installing Build Tools ---"
 apt-get update
 # libgl1 and libglib are strictly required for OpenCV
-apt-get install -y wget git build-essential python3-venv python3-dev
+apt-get install -y wget git build-essential 
 
 # --- 2. WORKSPACE SETUP & CLONING ---
 cd /workspace
@@ -26,12 +26,7 @@ $PIP_CMD hf-transfer huggingface_hub
 /venv/main/bin/hf download zhengchong/FastFit-MR-1024 --local-dir Models/FastFit-MR-1024
 /venv/main/bin/hf download zhengchong/Human-Toolkit --local-dir Models/Human-Toolkit
 
-echo "--- Installing Requirements ---"
-if [ -f "requirements.txt" ]; then
-    $PIP_CMD -r requirements.txt
-else
-    echo "WARNING: requirements.txt not found"
-fi
+$PIP_CMD -r requirements.txt
 
 # --- 4. FINAL CONFIGURATION ---
 
