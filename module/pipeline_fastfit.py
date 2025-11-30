@@ -13,6 +13,7 @@
 #   and indicate if changes were made.
 # - NonCommercial: You may not use the material for commercial purposes.
 
+import os
 import time
 from typing import Dict, List, Optional, Union
 
@@ -70,12 +71,12 @@ class FastFitPipeline:
             self.weight_dtype = torch.float32
         
         # Load model components
-        self.noise_scheduler = DDPMScheduler.from_pretrained(base_model_path, subfolder="scheduler")
+        self.noise_scheduler = DDPMScheduler.from_pretrained(os.path.join(base_model_path, "scheduler"))
         
-        self.vae = AutoencoderKL.from_pretrained(base_model_path, subfolder="vae")
+        self.vae = AutoencoderKL.from_pretrained(os.path.join(base_model_path, "vae"))
         self.vae.to(self.device, dtype=self.weight_dtype)
         
-        self.unet = UNet2DConditionModel.from_pretrained(base_model_path, subfolder="unet")
+        self.unet = UNet2DConditionModel.from_pretrained(os.path.join(base_model_path, "unet"))
         self.unet.to(self.device, dtype=self.weight_dtype)
         
         # COMPILE
