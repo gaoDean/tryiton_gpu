@@ -73,7 +73,7 @@ class FastFitPipeline:
         # Load model components
         self.noise_scheduler = DDPMScheduler.from_pretrained(os.path.join(base_model_path, "scheduler"))
         
-        self.vae = AutoencoderKL.from_pretrained(os.path.join(base_model_path, "vae"))
+        self.vae = AutoencoderKL.from_pretrained(os.path.join(base_model_path, "vae"), use_safetensors=False)
         self.vae.to(self.device, dtype=self.weight_dtype)
         
         self.unet = UNet2DConditionModel.from_pretrained(os.path.join(base_model_path, "unet"))
