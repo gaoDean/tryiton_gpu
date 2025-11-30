@@ -27,6 +27,7 @@ $PIP_CMD hf-transfer huggingface_hub
 /venv/main/bin/hf download zhengchong/Human-Toolkit --local-dir Models/Human-Toolkit
 
 $PIP_CMD -r requirements.txt
+/venv/main/bin/pip install easy-dwpose --no-dependencies
 
 # --- 4. FINAL CONFIGURATION ---
 

@@ -9,13 +9,8 @@ from typing import List, Dict, Optional
 # --- Path Setup ---
 sys.path.append(os.getcwd())
 
-try:
-    from module.pipeline_fastfit import FastFitPipeline
-    from parse_utils import DWposeDetector, DensePose, SCHP, multi_ref_cloth_agnostic_mask
-except ImportError:
-    print("\nCRITICAL ERROR: FastFit modules not found.")
-    print("Ensure you are running this script from the ROOT of the FastFit repository.")
-    sys.exit(1)
+from module.pipeline_fastfit import FastFitPipeline
+from parse_utils import DWposeDetector, DensePose, SCHP, multi_ref_cloth_agnostic_mask
 
 # --- Configuration ---
 PERSON_SIZE = (768, 1024)
