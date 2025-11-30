@@ -125,6 +125,9 @@ class FastFitEngine:
         # Inference
         print(f"Running Inference ({steps} steps)...")
         generator = torch.Generator(device=self.device).manual_seed(seed)
+
+        if torch.cuda.is_available():
+            torch.cuda.reset_peak_memory_stats()
         
         with torch.no_grad():
             result = self.pipeline(
@@ -139,6 +142,10 @@ class FastFitEngine:
                 generator=generator,
                 return_pil=True
             )
+
+        if torch.cuda.is_available():
+            max_vram = torch.cuda.max_memory_allocated() / (1024 ** 3)
+            print(f"Max VRAM used: {max_vram:.2f} GB")
 
         if output_path:
             result[0].save(output_path)

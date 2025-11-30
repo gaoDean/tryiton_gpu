@@ -12,6 +12,7 @@ This script is a robust wrapper around the FastFit virtual try-on diffusion mode
 
   * **Headless-First:** Removes GUI dependencies, using OpenCV and PIL for image handling suitable for SSH terminals.
   * **VRAM Management:** Offloads the `DWPose` detector to the CPU to preserve GPU memory (VRAM) for the main diffusion process.
+  * **VRAM Logging:** Automatically logs the maximum VRAM usage during inference for performance monitoring.
   * **Precision:** Uses `bfloat16` (Brain Floating Point) for the diffusion pipeline, offering a speed increase on Ampere (RTX 3090) cards without significant quality loss.
   * **Asset Management:** Automatically checks for and downloads required HuggingFace models (`FastFit-MR-1024`, `Human-Toolkit`) on the first run.
 
@@ -97,6 +98,7 @@ The script employs a `center_crop_to_aspect_ratio` helper function.
 3.  **Mask Generation:** Uses `multi_ref_cloth_agnostic_mask` to create a mask that tells the AI which parts of the image to repaint (the clothing areas) while preserving the face and hands.
 4.  **Reference Loading:** Iterates through the garments dictionary. If a user does not provide a specific item (e.g., no bag), the script generates a black placeholder image and sets a "mask" value of `0` effectively telling the model to ignore that input slot.
 5.  **Inference:** Runs the diffusion loop for the specified number of `steps` (default: 30) using a specific random `seed`.
+6.  **Logging:** Reports the peak VRAM consumption during the inference phase (CUDA only).
 
 -----
 
