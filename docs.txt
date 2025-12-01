@@ -4,7 +4,7 @@ This documentation covers the installation, architecture, usage, and technical d
 
 # FastFit Inference Engine Documentation
 
-## 1\. System Overview
+## 1. System Overview
 
 This script is a robust wrapper around the FastFit virtual try-on diffusion model. It is designed to automate the complex preprocessing steps required for virtual try-on (Pose detection, Segmentation, Masking) and streamline the inference process into a single CLI command.
 
@@ -18,7 +18,7 @@ This script is a robust wrapper around the FastFit virtual try-on diffusion mode
 
 -----
 
-## 2\. Installation & Environment Setup
+## 2. Installation & Environment Setup
 
 This setup assumes a fresh **Ubuntu** instance with **CUDA** drivers pre-installed (e.g., a standard Vast.ai template).
 
@@ -71,7 +71,7 @@ pip install -r requirements.txt
 
 -----
 
-## 3\. Script Architecture (`inference.py`)
+## 3. Script Architecture (`inference.py`)
 
 The script is built around the `FastFitEngine` class, which encapsulates the model lifecycle.
 
@@ -102,7 +102,7 @@ The script employs a `center_crop_to_aspect_ratio` helper function.
 
 -----
 
-## 4\. Usage Guide
+## 4. Usage Guide
 
 Run the script from the root of the `FastFit` directory.
 
@@ -163,7 +163,7 @@ python inference.py \
 
 -----
 
-## 5\. Directory Structure
+## 5. Directory Structure
 
 After running the script once, your directory structure on the server will look like this:
 
@@ -181,7 +181,7 @@ FastFit/
 └── output.png                  # Generated result
 ```
 
-## 6\. Troubleshooting
+## 6. Troubleshooting
 
 **Error: `OutOfMemoryError: CUDA out of memory`**
 
@@ -198,4 +198,133 @@ FastFit/
   * **Cause:** You ran `--dress` with `--upper`.
   * **Solution:** Remove either the dress argument or the upper/lower arguments.
 
-**Next Step:** Would you like me to write a small bash script that automatically watches an `inputs/` folder and processes images as soon as you upload them (batch processing)?
+-----
+
+## 7. Technical Documentation (Codebase Deep Dive)
+
+This section provides an in-depth reference for the functions and classes orchestrated by `inference.py` and `server.py`, inspecting dependencies down to the utility and architectural level.
+
+### `inference.py`
+
+*   **`center_crop_to_aspect_ratio(img: Image.Image, target_ratio: float) -> Image.Image`**
+    *   **Purpose:** Helper function to ensure input images match the model's expected dimensions.
+    *   **Logic:** Calculates the center of the image and crops it to match `target_ratio` (e.g., 3:4) without distorting the aspect ratio.
+
+*   **`class FastFitEngine`**
+    *   **Purpose:** The primary controller class for the inference lifecycle.
+    *   **`__init__`**: Initializes the computation device (CPU/CUDA) and verifies the existence of model weights (`FastFit-MR-1024` and `Human-Toolkit`). Calls `_load_pipeline` to load sub-models.
+    *   **`_load_pipeline(mixed_precision)`**: Loads the three preprocessors (`DWPose`, `DensePose`, `SCHP`) and the main `FastFitPipeline`. Notably, `DWPose` is forced to CPU to save VRAM.
+    *   **`process(person_path, garments, output_path, ...)`**:
+        1.  **Image Loading:** Opens and crops the person image.
+        2.  **Feature Extraction:** Generates Pose maps (skeleton), DensePose (IUV), and SCHP (segmentation) maps.
+        3.  **Masking:** Calls `multi_ref_cloth_agnostic_mask` to generate the inpainting mask.
+        4.  **Reference Prep:** Loads garment images, resizes them (smaller for accessories), and assigns them category labels (`upper`, `lower`, `overall`, etc.). Creates "blank" placeholders for missing items.
+        5.  **Inference:** Calls `self.pipeline()` to generate the final image.
+        6.  **Output:** Saves the result to disk.
+
+*   **`main()`**
+    *   **Purpose:** Command-line interface entry point. Parses arguments, enforcing conflict logic (e.g., preventing simultaneous `--dress` and `--upper`), and instantiates `FastFitEngine`.
+
+### `server.py` (Flask API)
+
+*   **`app`**: A Flask application instance that wraps `FastFitEngine`.
+*   **`@app.route('/prompt', methods=['POST'])`**:
+    *   **Input:** `multipart/form-data` containing:
+        *   `person`: (Required) The target person image.
+        *   `upper`, `lower`, `dress`, `shoe`, `bag`: (Optional) Garment images.
+        *   `steps`: (Optional) Integer, default 30.
+        *   `seed`: (Optional) Integer.
+    *   **Logic:**
+        1.  Creates a temporary directory for processing.
+        2.  Validates inputs (checks for `person` and at least one garment).
+        3.  Enforces outfit logic (Dress vs. Upper/Lower).
+        4.  Calls `engine.process` with `output_path=None` to get a PIL image in memory.
+        5.  Returns the generated image as a PNG response.
+    *   **Error Handling:** Returns 400 for validation errors, 500 for processing errors.
+
+### `module.pipeline_fastfit`
+
+*   **`class FastFitPipeline`**
+    *   **Purpose:** A specialized diffusion pipeline inheriting from `diffusers`, tailored for the FastFit architecture.
+    *   **`__init__`**: Loads the core diffusion components: `AutoencoderKL` (VAE), `UNet2DConditionModel`, and `DDPMScheduler`. Optimizes performance using `torch.compile` and fused QKV projections.
+    *   **`__call__`**: The main generation loop.
+        *   **Latent Preparation:** Encodes the masked person image and reference garments into latent space using the VAE.
+        *   **Conditioning:** Processes reference images and masks.
+        *   **Attention Caching:** Pre-computes Key/Value pairs for the reference images to guide the UNet generation (using `cache_kv=True`).
+        *   **Denoising Loop:** Iterates through `num_inference_steps`. For each step, it concatenates the noise, mask, and masked image latents, predicts noise residuals using the UNet, and updates the sample. It supports Classifier-Free Guidance (CFG) to improve adherence to the prompt/image prompts.
+        *   **Decoding:** Decodes the final latents back into pixel space using the VAE and blends the result with the original image using the mask (inpainting).
+
+### `module.utils` (Image & Tensor Utilities)
+
+*   **`paste_image_back_with_feathering`**:
+    *   **Purpose:** Blends a generated/inpainted crop back into the original full-resolution image.
+    *   **Technique:** Creates a mask matching the crop area, applies a Gaussian blur (`feather_radius`), and composites the images using this alpha mask for a seamless transition.
+*   **`adjust_input_image`**:
+    *   **Purpose:** Prepares the input image for inpainting by centering on the mask.
+    *   **Logic:** Finds the bounding box of the mask, adjusts it to match the target aspect ratio, adds padding (`padding_ratio`), and crops the image/mask to this new viewport.
+*   **`prepare_image` / `prepare_mask_image`**:
+    *   **Purpose:** Converts PIL images or Numpy arrays into PyTorch tensors.
+    *   **Normalization:** `prepare_image` normalizes pixel values to `[-1, 1]` (standard for latent diffusion). `prepare_mask_image` binarizes the mask to `{0, 1}`.
+*   **`get_bounding_box`**: Calculates the `(xmin, ymin, xmax, ymax)` of non-zero pixels in a mask.
+*   **`resize_and_crop` / `resize_and_padding`**: Helpers for image resizing strategies (filling vs. fitting).
+
+### `module.attention_processor` (Attention Mechanism)
+
+*   **`class OptimizedAttentionCache`**:
+    *   **Purpose:** Implements the "FastFit" efficiency mechanism. Instead of re-computing reference features at every step, it caches the **Keys** and **Values** from the reference garment images.
+    *   **Storage:** Pre-allocates tensors on the GPU for `cached_keys`, `cached_values`, and `cached_mask`.
+*   **`class AttnProcessor2_0` (and `Fused` variant)**:
+    *   **Purpose:** Overrides standard PyTorch attention to support KV Caching.
+    *   **Cache Logic:**
+        *   If `cache_kv=True` (used during the "ref" pass), it computes K/V pairs and stores them in `OptimizedAttentionCache`.
+        *   If `cache_kv=False` (used during the "denoising" pass), it retrieves the cached K/V pairs from the reference images, concatenates them with the current hidden states, and performs attention. This allows the model to "attend" to the reference garment details without recalculating them repeatedly.
+
+### `parse_utils.automasker` (Mask Generation)
+
+*   **`multi_ref_cloth_agnostic_mask`**:
+    *   **Purpose:** The primary masker for inference.
+    *   **Logic:** Unions the segmentation maps of all clothing items (Top, Bottom, Dress, Coat, Shoes, etc.) from the SCHP parsers. It excludes the **Face** region (via `schp_lip_mask` Face label) to protect identity. It explicitly *disables* strong hand protection to allow sleeves/gloves to be generated naturally.
+*   **`cloth_agnostic_mask`**:
+    *   **Purpose:** A more granular masker for specific body parts.
+    *   **Logic:** Accepts a `part` argument (`upper`, `lower`, `overall`). It employs **Strong Protection** for Hands and Feet using DensePose data (`DENSE_INDEX_MAP`) to prevent the model from painting over extremities.
+*   **`part_mask_of`**:
+    *   **Purpose:** Extracts binary masks for specific semantic labels (e.g., "Upper-clothes") from the raw segmentation arrays using `ATR_MAPPING` or `LIP_MAPPING`.
+*   **`create_bounding_box_mask`**:
+    *   **Purpose:** Creates a rectangular mask around a target area, optionally expanding it horizontally. Useful for "square" inpainting tasks.
+*   **`hull_mask`**:
+    *   **Purpose:** Computes the Convex Hull of a mask to fill in holes or gaps in the segmentation map.
+
+### `parse_utils.dwpose`
+
+*   **`class DWposeDetector`**
+    *   **Purpose:** Wrapper for the Wholebody pose estimation model (YOLOX + DWPose).
+    *   **`__init__`**: Loads the ONNX models for detection and pose estimation.
+    *   **`__call__`**: Accepts an image, resizes it, runs inference to detect body keypoints (body, hands, face), and draws the "skeleton" pose image used to condition the diffusion model.
+
+### `parse_utils.densepose.pipeline`
+
+*   **`class DensePose`**
+    *   **Purpose:** Wrapper for Facebook's Detectron2 DensePose model.
+    *   **`__init__`**: Configures the Detectron2 predictor with the specific config (`densepose_rcnn_R_50_FPN_s1x.yaml`) and weights.
+    *   **`__call__`**: Runs inference to map pixels of the person to a 3D surface coordinate system (IUV). Returns a visualized DensePose map (often purple/green) that helps the model understand body shape and orientation.
+
+### `parse_utils.schp`
+
+*   **`class SCHP`**
+    *   **Purpose:** Self-Correction for Human Parsing. Used to segment the image into semantic regions (e.g., "this pixel is hair", "this pixel is a shirt").
+    *   **`__init__`**: Initializes a ResNet101-based segmentation model tailored for datasets like LIP (Look Into Person) or ATR.
+    *   **`preprocess`**: Applies affine transformations and normalization to prepare the input image for the network.
+    *   **`__call__`**: Runs the model to produce a segmentation map where each pixel value corresponds to a specific category (Face, Upper-clothes, Pants, etc.).
+
+-----
+
+## 8. Update Log
+
+### December 1, 2025
+*   **Initial Documentation Generation:**
+    *   Created extensive documentation for `inference.py` and its immediate dependencies, including `module.pipeline_fastfit`, `parse_utils.dwpose`, `parse_utils.densepose.pipeline`, `parse_utils.schp`, and `parse_utils.automasker`.
+    *   Added details on the Flask API (`server.py`).
+    *   Documented key utility functions in `module/utils.py`.
+    *   Provided insights into the attention caching mechanism within `module/attention_processor.py`.
+    *   Expanded on the mask generation logic in `parse_utils/automasker.py`, differentiating between `multi_ref_cloth_agnostic_mask` and `cloth_agnostic_mask`.
+    *   Organized this information under "7. Technical Documentation (Codebase Deep Dive)".
