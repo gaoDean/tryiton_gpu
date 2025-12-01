@@ -107,8 +107,10 @@ class OptimizedAttentionCache:
         self.cached_values[:, :, self.current_len:self.current_len + seq_len] = value
         if attention_mask is not None:
             self.cached_mask[:, self.current_len:self.current_len + seq_len] = attention_mask
+        else:
+            self.cached_mask[:, self.current_len:self.current_len + seq_len] = 1.0
         
-        return self.cached_keys[:, :, :self.current_len + seq_len], self.cached_values[:, :, :self.current_len + seq_len], self.cached_mask[:, :self.current_len + seq_len] if attention_mask is not None else None
+        return self.cached_keys[:, :, :self.current_len + seq_len], self.cached_values[:, :, :self.current_len + seq_len], self.cached_mask[:, :self.current_len + seq_len]
 
 
 @maybe_allow_in_graph
@@ -1306,6 +1308,8 @@ class FusedAttnProcessor2_0:
             self.kv_cache.update(key, value, attention_mask)
         else:
             key, value, attention_mask = self.kv_cache.set_postfix(key, value, attention_mask)
+            if attention_mask is not None:
+                attention_mask = attention_mask.view(batch_size, 1, 1, attention_mask.shape[-1])
             
         # the output of sdp = (batch, num_heads, seq_len, head_dim)
         # TODO: add support for attn.scale when we move to Torch 2.1
