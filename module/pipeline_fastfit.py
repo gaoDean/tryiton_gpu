@@ -80,10 +80,10 @@ class FastFitPipeline:
         self.unet.to(self.device, dtype=self.weight_dtype)
         
         # COMPILE
-        self.unet = torch.compile(self.unet, mode="reduce-overhead")    
+        # self.unet = torch.compile(self.unet, mode="reduce-overhead")    
         self.vae = torch.compile(self.vae, mode="max-autotune")
         self.unet.fuse_qkv_projections()
-        self.vae.enable_tiling()
+        # self.vae.enable_tiling()
         
         # Enable TF32 (if allowed)
         if allow_tf32 and torch.cuda.is_available():
