@@ -11,6 +11,7 @@ sys.path.append(os.getcwd())
 
 from module.pipeline_fastfit import FastFitPipeline
 from parse_utils import DWposeDetector, DensePose, SCHP, cloth_agnostic_mask
+from parse_utils.automasker import part_mask_of, LIP_MAPPING, ATR_MAPPING
 
 # --- Configuration ---
 PERSON_SIZE = (768, 1024)
@@ -136,6 +137,37 @@ class FastFitEngine:
             
             if path and os.path.exists(path):
                 img = Image.open(path).convert("RGB").resize(target_size, Image.LANCZOS)
+                
+                # --- Auto-Masking Reference Image ---
+                # This ensures that if a full body model is provided for 'upper', 
+                # we mask out the 'lower' parts so they don't leak into generation.
+                
+                ref_mask_arr = None
+                if key == "bag":
+                     # Use ATR for bag
+                     atr_parse = np.array(self.schp_atr(img))
+                     ref_mask_arr = part_mask_of(["Bag"], atr_parse, ATR_MAPPING)
+                else:
+                     # Use LIP for clothes/shoes
+                     lip_parse = np.array(self.schp_lip(img))
+                     
+                     if model_label == "upper":
+                         ref_mask_arr = part_mask_of(["Upper-clothes", "Coat", "Jumpsuits"], lip_parse, LIP_MAPPING)
+                     elif model_label == "lower":
+                         ref_mask_arr = part_mask_of(["Pants", "Skirt"], lip_parse, LIP_MAPPING)
+                     elif model_label == "overall": # dress
+                         ref_mask_arr = part_mask_of(["Dress", "Coat", "Jumpsuits", "Upper-clothes", "Skirt", "Pants"], lip_parse, LIP_MAPPING)
+                     elif model_label == "shoe":
+                         ref_mask_arr = part_mask_of(["Left-shoe", "Right-shoe", "Socks"], lip_parse, LIP_MAPPING)
+                
+                if ref_mask_arr is not None and ref_mask_arr.sum() > 0:
+                     # Expand mask slightly to avoid cutting off edges
+                     # ref_mask_arr = cv2.dilate(ref_mask_arr.astype(np.uint8), np.ones((5,5), np.uint8), iterations=1)
+                     ref_mask_pil = Image.fromarray((ref_mask_arr * 255).astype(np.uint8)).convert("L")
+                     # Apply mask to image (make background black)
+                     img_bg = Image.new("RGB", img.size, (0,0,0))
+                     img = Image.composite(img, img_bg, ref_mask_pil)
+
                 ref_images.append(img)
                 ref_labels.append(model_label)
                 ref_masks.append(1)
