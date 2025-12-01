@@ -36,7 +36,7 @@ PYTHON_CMD="/venv/main/bin/python"
 export HF_HUB_ENABLE_HF_TRANSFER=1
 $PIP_CMD hf-transfer huggingface_hub
 
-/venv/main/bin/hf download zhengchong/FastFit-SR-1024 --local-dir Models/FastFit-MR-1024
+/venv/main/bin/hf download zhengchong/FastFit-MR-1024 --local-dir Models/FastFit-MR-1024
 /venv/main/bin/hf download zhengchong/Human-Toolkit --local-dir Models/Human-Toolkit
 
 $PIP_CMD -r requirements.txt
