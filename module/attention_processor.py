@@ -1305,7 +1305,7 @@ class FusedAttnProcessor2_0:
             # --- 2. Update Cache K, V, and Mask ---
             self.kv_cache.update(key, value, attention_mask)
         else:
-            key, value, attention_mask = self.kv_cache.set_postfix(key, value, None)
+            key, value, attention_mask = self.kv_cache.set_postfix(key, value, attention_mask)
             
         # the output of sdp = (batch, num_heads, seq_len, head_dim)
         # TODO: add support for attn.scale when we move to Torch 2.1

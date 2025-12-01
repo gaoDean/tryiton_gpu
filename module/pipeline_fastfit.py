@@ -35,9 +35,9 @@ from .utils import (
 )
 
 REF_LABEL_MAP = {
-    "upper": 0,
-    "lower": 1,
-    "overall": 2,
+    "overall": 0,
+    "upper": 1,
+    "lower": 2,
     "shoe": 3,
     "bag": 4
 }
