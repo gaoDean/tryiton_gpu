@@ -1,6 +1,6 @@
 import os
 import sys
-import argparse
+import time
 import torch
 import numpy as np
 from PIL import Image
@@ -79,6 +79,8 @@ class FastFitEngine:
 
     def process(self, person_path, garments, output_path, steps=30, seed=42):
         print(f"Processing person: {person_path}")
+        t0 = time.time()
+        
         if not os.path.exists(person_path):
             raise FileNotFoundError(f"Person image not found: {person_path}")
 
@@ -138,6 +140,9 @@ class FastFitEngine:
                 ref_images.append(Image.new("RGB", target_size, (0,0,0)))
                 ref_labels.append(model_label)
                 ref_masks.append(0)
+        
+        t1 = time.time()
+        encoding_time = t1 - t0
 
         # Inference
         print(f"Running Inference ({steps} steps)...")
@@ -160,51 +165,24 @@ class FastFitEngine:
                 return_pil=True
             )
 
+        t2 = time.time()
+        inference_time = t2 - t1
+        total_time = t2 - t0
+        
+        stats = {
+            "encoding_time": f"{encoding_time:.2f}s",
+            "inference_time": f"{inference_time:.2f}s",
+            "total_time": f"{total_time:.2f}s"
+        }
+        
         if torch.cuda.is_available():
             max_vram = torch.cuda.max_memory_allocated() / (1024 ** 3)
             print(f"Max VRAM used: {max_vram:.2f} GB")
+            stats["max_vram"] = f"{max_vram:.2f} GB"
 
         if output_path:
             result[0].save(output_path)
             print(f"Success! Image saved to: {output_path}")
-            return output_path
+            return output_path, stats
         else:
-            return result[0]
-
-def main():
-    parser = argparse.ArgumentParser(description="FastFit CLI")
-    parser.add_argument("--person", type=str, required=True)
-    parser.add_argument("--output", type=str, default="output.png")
-    parser.add_argument("--upper", type=str)
-    parser.add_argument("--lower", type=str)
-    parser.add_argument("--dress", type=str)
-    parser.add_argument("--shoe", type=str)
-    parser.add_argument("--bag", type=str)
-    parser.add_argument("--steps", type=int, default=30)
-    parser.add_argument("--seed", type=int, default=42)
-
-    args = parser.parse_args()
-
-    if args.dress and (args.upper or args.lower):
-        print("Error: Cannot mix dress with upper/lower.")
-        sys.exit(1)
-        
-    if not any([args.upper, args.lower, args.dress, args.shoe, args.bag]):
-        print("Error: No garments provided.")
-        sys.exit(1)
-
-    engine = FastFitEngine()
-    
-    garments = {
-        "upper": args.upper, "lower": args.lower, 
-        "dress": args.dress, "shoe": args.shoe, "bag": args.bag
-    }
-
-    try:
-        engine.process(args.person, garments, args.output, args.steps, args.seed)
-    except ValueError as e:
-        print(f"Error: {e}")
-        sys.exit(1)
-
-if __name__ == "__main__":
-    main()
+            return result[0], stats

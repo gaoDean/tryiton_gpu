@@ -33,6 +33,11 @@ def test_inference(url, person, upper=None, lower=None, dress=None, shoe=None, b
             with open(output, 'wb') as f:
                 f.write(response.content)
             print(f"Success! Result saved to {output}")
+            print("\n--- Inference Statistics ---")
+            for key, value in response.headers.items():
+                if key.startswith("X-"):
+                    print(f"{key[2:]}: {value}")
+            print("----------------------------")
         else:
             print(f"Error: {response.status_code} - {response.text}")
 

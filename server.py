@@ -3,7 +3,7 @@ import sys
 import tempfile
 import shutil
 import random
-from flask import Flask, request, send_file, jsonify
+from flask import Flask, request, send_file, jsonify, make_response
 from inference import FastFitEngine
 
 app = Flask(__name__)
@@ -68,7 +68,7 @@ def prompt():
             seed = int(seed_param)
         
         print(f"Processing request in {temp_dir}")
-        result_image = engine.process(
+        result_image, stats = engine.process(
             person_path=files['person'],
             garments=garments,
             output_path=None, # Return PIL Image
@@ -80,7 +80,14 @@ def prompt():
         output_path = os.path.join(temp_dir, "result.png")
         result_image.save(output_path)
         
-        return send_file(output_path, mimetype='image/png')
+        response = make_response(send_file(output_path, mimetype='image/png'))
+        response.headers['X-Encoding-Time'] = stats.get('encoding_time', 'N/A')
+        response.headers['X-Inference-Time'] = stats.get('inference_time', 'N/A')
+        response.headers['X-Total-Time'] = stats.get('total_time', 'N/A')
+        if 'max_vram' in stats:
+            response.headers['X-Max-VRAM'] = stats['max_vram']
+            
+        return response
 
     except Exception as e:
         print(f"Error processing request: {e}")
