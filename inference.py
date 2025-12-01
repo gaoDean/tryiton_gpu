@@ -54,7 +54,7 @@ class FastFitEngine:
         print("Loading Preprocessors...")
         self.dwpose = DWposeDetector(
             pretrained_model_name_or_path=os.path.join(self.util_model_path, "DWPose"), 
-            device='cpu'
+            device=self.device
         )
         self.densepose = DensePose(
             model_path=os.path.join(self.util_model_path, "DensePose"), 
@@ -92,6 +92,9 @@ class FastFitEngine:
         densepose_arr = np.array(self.densepose(person_img))
         lip_arr = np.array(self.schp_lip(person_img))
         atr_arr = np.array(self.schp_atr(person_img))
+
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
         # Validate single garment input & determine mask part
         active_garments = [k for k, v in garments.items() if v]
