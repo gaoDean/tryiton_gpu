@@ -94,10 +94,10 @@ The script employs a `center_crop_to_aspect_ratio` helper function.
 #### The Processing Loop (`process`)
 
 1.  **Validation:** Checks if input files exist.
-2.  **Feature Extraction:** Runs the person image through DWPose (Pose), DensePose (Shape), and SCHP (Body Segmentation).
-3.  **Mask Generation:** Uses `multi_ref_cloth_agnostic_mask` to create a mask that tells the AI which parts of the image to repaint (the clothing areas) while preserving the face and hands.
-4.  **Reference Loading:** Iterates through the garments dictionary. If a user does not provide a specific item (e.g., no bag), the script generates a black placeholder image and sets a "mask" value of `0` effectively telling the model to ignore that input slot.
-5.  **Inference:** Runs the diffusion loop for the specified number of `steps` (default: 30) using a specific random `seed`.
+  * **Feature Extraction:** Runs the person image through DWPose (Pose), DensePose (Shape), and SCHP (Body Segmentation).
+  * **Mask Generation:** Uses `cloth_agnostic_mask` with a dynamic `part` argument (e.g., "upper", "lower", "overall") corresponding to the user's input garment. This ensures precise masking for the specific item being changed.
+  * **Reference Loading:** Validates that **exactly one** garment type is provided. Iterates through the garments dictionary to load the reference image and creating placeholders for the rest.
+  * **Inference:** Runs the diffusion loop for the specified number of `steps` (default: 30) using a specific random `seed`.
 6.  **Logging:** Reports the peak VRAM consumption during the inference phase (CUDA only).
 
 -----
@@ -122,9 +122,9 @@ Run the script from the root of the `FastFit` directory.
 
 ### Important Logic Guards
 
-The script contains a built-in conflict guard to prevent logical errors in the outfit construction:
+The script contains a strict conflict guard to ensure high-quality generation:
 
-> **Conflict Rule:** You cannot specify `--dress` at the same time as `--upper` or `--lower`.
+> **Single Item Rule:** You must provide **exactly one** garment argument (e.g., `--upper`, `--lower`, or `--dress`). Mixing multiple garments (e.g., `--upper` and `--lower`) is not supported in this mode and will raise an error.
 
 ### Examples
 

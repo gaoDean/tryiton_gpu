@@ -10,7 +10,7 @@ from typing import List, Dict, Optional
 sys.path.append(os.getcwd())
 
 from module.pipeline_fastfit import FastFitPipeline
-from parse_utils import DWposeDetector, DensePose, SCHP, multi_ref_cloth_agnostic_mask
+from parse_utils import DWposeDetector, DensePose, SCHP, cloth_agnostic_mask
 
 # --- Configuration ---
 PERSON_SIZE = (768, 1024)
@@ -91,11 +91,28 @@ class FastFitEngine:
         lip_arr = np.array(self.schp_lip(person_img))
         atr_arr = np.array(self.schp_atr(person_img))
 
+        # Validate single garment input & determine mask part
+        active_garments = [k for k, v in garments.items() if v]
+        if len(active_garments) != 1:
+             raise ValueError(f"Please provide exactly one garment type. Found: {active_garments}")
+
+        garment_type = active_garments[0]
+        if garment_type == "upper":
+            mask_part = "upper"
+        elif garment_type == "lower":
+            mask_part = "lower"
+        elif garment_type == "dress":
+            mask_part = "overall"
+        else:
+            # Fallback for shoe/bag to 'overall' as they are not explicitly supported 
+            # keys in cloth_agnostic_mask's 'part' argument validation
+            mask_part = "overall"
+
         # Generate Mask
-        mask_img = multi_ref_cloth_agnostic_mask(
+        mask_img = cloth_agnostic_mask(
             densepose_arr, lip_arr, atr_arr,
-            square_cloth_mask=False,
-            horizon_expand=True
+            part=mask_part,
+            square_cloth_mask=False
         )
 
         # Prepare References
@@ -183,7 +200,11 @@ def main():
         "dress": args.dress, "shoe": args.shoe, "bag": args.bag
     }
 
-    engine.process(args.person, garments, args.output, args.steps, args.seed)
+    try:
+        engine.process(args.person, garments, args.output, args.steps, args.seed)
+    except ValueError as e:
+        print(f"Error: {e}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
