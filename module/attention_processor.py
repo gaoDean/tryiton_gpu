@@ -1310,9 +1310,6 @@ class FusedAttnProcessor2_0:
         # the output of sdp = (batch, num_heads, seq_len, head_dim)
         # TODO: add support for attn.scale when we move to Torch 2.1
 
-        key = torch.cat([key, key], dim=2)  # FIXME: remove this when torch 2.1 is available
-        value = torch.cat([value, value], dim=2)  # FIXME: remove this when torch 2.1 is available
-
         hidden_states = F.scaled_dot_product_attention(
             query, key, value, attn_mask=attention_mask if not cache_kv else None, dropout_p=0.0, is_causal=False
         )
