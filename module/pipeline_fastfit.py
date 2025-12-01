@@ -76,20 +76,7 @@ class FastFitPipeline:
         self.vae = AutoencoderKL.from_pretrained(os.path.join(base_model_path, "vae"), use_safetensors=False)
         self.vae.to(self.device, dtype=self.weight_dtype)
         
-        self.unet = UNet2DConditionModel.from_pretrained(os.path.join(base_model_path, "unet"))
-        self.unet.to(self.device, dtype=self.weight_dtype)
-        
-        # COMPILE
-        # self.unet = torch.compile(self.unet, mode="reduce-overhead")    
-        self.vae = torch.compile(self.vae, mode="max-autotune")
-        self.unet.fuse_qkv_projections()
-        # self.vae.enable_tiling()
-        
-        # Enable TF32 (if allowed)
-        if allow_tf32 and torch.cuda.is_available():
-            torch.set_float32_matmul_precision("high")
-            torch.backends.cuda.matmul.allow_tf32 = True
-
+        self.unet = UNet2DConditionModel.from_pretrained(os.path.join(base_model_path, "unet"), num_class_embeds=5)
 
     @torch.no_grad()
     def __call__(
