@@ -958,8 +958,10 @@ class UNet2DConditionModel(
                 # `Timesteps` does not contain any weights and will always return f32 tensors
                 # there might be better ways to encapsulate this.
                 class_labels = class_labels.to(dtype=sample.dtype)
+            print(f"[DEBUG] get_class_embed: Input class_labels (tensor value): {class_labels.cpu().numpy()} (Shape: {class_labels.shape})")
 
             class_emb = self.class_embedding(class_labels).to(dtype=sample.dtype)
+            print(f"[DEBUG] get_class_embed: Output class_emb (first 5 elems): {class_emb.flatten()[:5].cpu().numpy()} (Shape: {class_emb.shape})")
         return class_emb
 
     def get_aug_embed(
@@ -1163,7 +1165,9 @@ class UNet2DConditionModel(
             class_emb = self.get_class_embed(sample=sample, class_labels=class_labels)
             if class_emb is not None:
                 if emb is None:
+                    print(f"[DEBUG] forward: 'timestep' is None, using class_labels for embedding.")
                     emb = class_emb
+                    print(f"[DEBUG] forward: 'emb' set to class_emb for reference processing. Shape: {emb.shape}")
                 else:   
                     if self.config.class_embeddings_concat:
                         emb = torch.cat([emb, class_emb], dim=-1)
