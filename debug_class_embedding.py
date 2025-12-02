@@ -25,7 +25,8 @@ def debug_class_embeddings():
             block_out_channels=(32, 64),    # Small size for speed
             layers_per_block=1,
             cross_attention_dim=32,
-            down_block_types=("CrossAttnDownBlock2D", "DownBlock2D") # Adjust to match block_out_channels length
+            down_block_types=("CrossAttnDownBlock2D", "DownBlock2D"),
+            up_block_types=("UpBlock2D", "CrossAttnUpBlock2D"),
         )
         print("   [OK] UNet initialized.")
     except Exception as e:
