@@ -213,6 +213,8 @@ class FastFitPipeline:
         
         # Cache Ref KV
         for ref_image_latent, ref_label, ref_attention_mask in zip(ref_images_latent, ref_labels, ref_attention_masks):
+            print("ref label:", ref_label)
+            print("ref label name:", [key for key, value in REF_LABEL_MAP.items() if value == ref_label.item()][0])
             # if attention_mask is all 0, skip
             if ref_attention_mask.sum() == 0:
                 continue
