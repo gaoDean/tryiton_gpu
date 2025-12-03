@@ -212,6 +212,7 @@ class FastFitPipeline:
         )
         
         # Cache Ref KV
+        print(f"[DEBUG] Cache Init - Label Tensors: {[l.cpu().numpy() for l in ref_labels]}")
         for ref_image_latent, ref_label, ref_attention_mask in zip(ref_images_latent, ref_labels, ref_attention_masks):
             print("ref label:", ref_label)
             print("ref label name:", [key for key, value in REF_LABEL_MAP.items() if value == ref_label.item()][0])
